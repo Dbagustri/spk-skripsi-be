@@ -8,10 +8,14 @@ use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\Admin\AlternativeController;
 use App\Http\Controllers\Api\Admin\CriteriaController;
 use App\Http\Controllers\Api\Admin\AlternativeCriteriaController;
+use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\ResultController;
 
-// ====================
-// AUTH
-// ====================
+/*
+|--------------------------------------------------------------------------
+| AUTH
+|--------------------------------------------------------------------------
+*/
 
 Route::prefix('auth')->group(function () {
 
@@ -41,10 +45,11 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-
-// ====================
-// MAHASISWA API
-// ====================
+/*
+|--------------------------------------------------------------------------
+| USER API (Mahasiswa + Admin)
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(
     'auth:sanctum'
@@ -52,11 +57,37 @@ Route::middleware(
 
     /*
     |--------------------------------------------------------------------------
+    | Profile
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/me',
+        [AuthController::class, 'me']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Read Only
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/criteria',
+        [CriteriaController::class, 'index']
+    );
+
+    Route::get(
+        '/alternatives',
+        [AlternativeController::class, 'index']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
     | Questionnaire
     |--------------------------------------------------------------------------
     */
 
-    // get all alternatives for questionnaire
     Route::get(
         '/questionnaire',
         [
@@ -65,7 +96,6 @@ Route::middleware(
         ]
     );
 
-    // submit questionnaire
     Route::post(
         '/questionnaire',
         [
@@ -76,7 +106,7 @@ Route::middleware(
 
     /*
     |--------------------------------------------------------------------------
-    | Recommendation / Result WASPAS
+    | Recommendation / WASPAS
     |--------------------------------------------------------------------------
     */
 
@@ -87,6 +117,7 @@ Route::middleware(
             'calculate'
         ]
     );
+
     Route::get(
         '/recommendation/latest',
         [
@@ -94,6 +125,7 @@ Route::middleware(
             'latest'
         ]
     );
+
     Route::get(
         '/recommendation/history',
         [
@@ -101,6 +133,7 @@ Route::middleware(
             'history'
         ]
     );
+
     Route::get(
         '/recommendation/detail',
         [
@@ -108,6 +141,7 @@ Route::middleware(
             'detail'
         ]
     );
+
     Route::get(
         '/recommendation/history/{id}',
         [
@@ -117,10 +151,11 @@ Route::middleware(
     );
 });
 
-
-// ====================
-// ADMIN API
-// ====================
+/*
+|--------------------------------------------------------------------------
+| ADMIN API
+|--------------------------------------------------------------------------
+*/
 
 Route::prefix('admin')
     ->middleware([
@@ -132,7 +167,6 @@ Route::prefix('admin')
         Route::get(
             '/test',
             function () {
-
                 return response()->json([
                     'message' =>
                     'Admin only'
@@ -142,9 +176,30 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Criteria
+        | Criteria CRUD
         |--------------------------------------------------------------------------
         */
+        /*
+|--------------------------------------------------------------------------
+| Users
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/users',
+            [UserController::class, 'index']
+        );
+
+        /*
+|--------------------------------------------------------------------------
+| Results
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/results',
+            [ResultController::class, 'index']
+        );
 
         Route::apiResource(
             'criteria',
@@ -153,7 +208,7 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Alternatives
+        | Alternatives CRUD
         |--------------------------------------------------------------------------
         */
 
@@ -164,7 +219,7 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Alternative Criteria (Admin Scoring)
+        | Alternative Criteria Scoring
         |--------------------------------------------------------------------------
         */
 
