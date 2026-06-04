@@ -14,7 +14,7 @@ class RoleSeeder extends Seeder
         ]);
 
         Role::firstOrCreate([
-            'name' => 'mahasiswa'
+            'name' => 'user'
         ]);
     }
 }

@@ -11,65 +11,79 @@ class AlternativeCriteriaSeeder extends Seeder
     {
         $data = [
 
-            // AI
-            ['alternative_id' => 1, 'criteria_id' => 1, 'nilai' => 5],
-            ['alternative_id' => 1, 'criteria_id' => 2, 'nilai' => 5],
-            ['alternative_id' => 1, 'criteria_id' => 3, 'nilai' => 5],
-            ['alternative_id' => 1, 'criteria_id' => 4, 'nilai' => 4],
-            ['alternative_id' => 1, 'criteria_id' => 5, 'nilai' => 5],
+            /*
+            Criteria ID:
+            C5 = 6
+            C6 = 7
+            C7 = 8
+            C8 = 9
+            C10 = 10
+            */
 
-            // Web Dev
-            ['alternative_id' => 2, 'criteria_id' => 1, 'nilai' => 4],
-            ['alternative_id' => 2, 'criteria_id' => 2, 'nilai' => 5],
-            ['alternative_id' => 2, 'criteria_id' => 3, 'nilai' => 4],
-            ['alternative_id' => 2, 'criteria_id' => 4, 'nilai' => 5],
-            ['alternative_id' => 2, 'criteria_id' => 5, 'nilai' => 4],
+            // A1 Software Engineering
+            [1, 6, 5],
+            [1, 7, 5],
+            [1, 8, 5],
+            [1, 9, 3],
+            [1, 10, 5],
 
-            // Mobile
-            ['alternative_id' => 3, 'criteria_id' => 1, 'nilai' => 4],
-            ['alternative_id' => 3, 'criteria_id' => 2, 'nilai' => 5],
-            ['alternative_id' => 3, 'criteria_id' => 3, 'nilai' => 4],
-            ['alternative_id' => 3, 'criteria_id' => 4, 'nilai' => 4],
-            ['alternative_id' => 3, 'criteria_id' => 5, 'nilai' => 4],
+            // A2 Web Enterprise
+            [2, 6, 5],
+            [2, 7, 4],
+            [2, 8, 5],
+            [2, 9, 2],
+            [2, 10, 5],
 
-            // Cyber Security
-            ['alternative_id' => 4, 'criteria_id' => 1, 'nilai' => 4],
-            ['alternative_id' => 4, 'criteria_id' => 2, 'nilai' => 5],
-            ['alternative_id' => 4, 'criteria_id' => 3, 'nilai' => 5],
-            ['alternative_id' => 4, 'criteria_id' => 4, 'nilai' => 4],
-            ['alternative_id' => 4, 'criteria_id' => 5, 'nilai' => 5],
+            // A3 Database Engineering
+            [3, 6, 4],
+            [3, 7, 5],
+            [3, 8, 4],
+            [3, 9, 3],
+            [3, 10, 5],
 
-            // Data Science
-            ['alternative_id' => 5, 'criteria_id' => 1, 'nilai' => 5],
-            ['alternative_id' => 5, 'criteria_id' => 2, 'nilai' => 4],
-            ['alternative_id' => 5, 'criteria_id' => 3, 'nilai' => 5],
-            ['alternative_id' => 5, 'criteria_id' => 4, 'nilai' => 3],
-            ['alternative_id' => 5, 'criteria_id' => 5, 'nilai' => 5],
+            // A4 AI
+            [4, 6, 5],
+            [4, 7, 5],
+            [4, 8, 4],
+            [4, 9, 5],
+            [4, 10, 5],
 
-            // IoT
-            ['alternative_id' => 6, 'criteria_id' => 1, 'nilai' => 4],
-            ['alternative_id' => 6, 'criteria_id' => 2, 'nilai' => 4],
-            ['alternative_id' => 6, 'criteria_id' => 3, 'nilai' => 4],
-            ['alternative_id' => 6, 'criteria_id' => 4, 'nilai' => 5],
-            ['alternative_id' => 6, 'criteria_id' => 5, 'nilai' => 4],
+            // A5 DSS / System Analyst
+            [5, 6, 5],
+            [5, 7, 4],
+            [5, 8, 5],
+            [5, 9, 3],
+            [5, 10, 4],
 
-            // UI/UX
-            ['alternative_id' => 7, 'criteria_id' => 1, 'nilai' => 5],
-            ['alternative_id' => 7, 'criteria_id' => 2, 'nilai' => 2],
-            ['alternative_id' => 7, 'criteria_id' => 3, 'nilai' => 3],
-            ['alternative_id' => 7, 'criteria_id' => 4, 'nilai' => 4],
-            ['alternative_id' => 7, 'criteria_id' => 5, 'nilai' => 4],
+            // A6 Data Science
+            [6, 6, 5],
+            [6, 7, 5],
+            [6, 8, 4],
+            [6, 9, 4],
+            [6, 10, 5],
 
-            // Networking
-            ['alternative_id' => 8, 'criteria_id' => 1, 'nilai' => 3],
-            ['alternative_id' => 8, 'criteria_id' => 2, 'nilai' => 4],
-            ['alternative_id' => 8, 'criteria_id' => 3, 'nilai' => 4],
-            ['alternative_id' => 8, 'criteria_id' => 4, 'nilai' => 4],
-            ['alternative_id' => 8, 'criteria_id' => 5, 'nilai' => 4],
+            // A7 Mobile
+            [7, 6, 4],
+            [7, 7, 4],
+            [7, 8, 4],
+            [7, 9, 3],
+            [7, 10, 5],
+
+            // A8 Multimedia & CV
+            [8, 6, 4],
+            [8, 7, 4],
+            [8, 8, 3],
+            [8, 9, 5],
+            [8, 10, 4],
         ];
 
         foreach ($data as $item) {
-            AlternativeCriteria::create($item);
+
+            AlternativeCriteria::create([
+                'alternative_id' => $item[0],
+                'criteria_id' => $item[1],
+                'nilai' => $item[2],
+            ]);
         }
     }
 }

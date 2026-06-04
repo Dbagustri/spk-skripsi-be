@@ -8,8 +8,9 @@ class QuestionnaireAnswer extends Model
 {
     protected $fillable = [
         'user_id',
-        'question_id',
-        'answer_value'
+        'alternative_id',
+        'criteria_id',
+        'nilai'
     ];
 
     public function user()
@@ -19,10 +20,17 @@ class QuestionnaireAnswer extends Model
         );
     }
 
-    public function question()
+    public function alternative()
     {
         return $this->belongsTo(
-            Question::class
+            Alternative::class
+        );
+    }
+
+    public function criteria()
+    {
+        return $this->belongsTo(
+            Criteria::class
         );
     }
 }

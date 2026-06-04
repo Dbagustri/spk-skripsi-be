@@ -4,15 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class RecommendationResult
-extends Model
+class RecommendationSession extends Model
 {
     protected $fillable = [
-        'recommendation_session_id',
         'user_id',
-        'alternative_id',
-        'rank',
-        'score'
+        'top_alternative_id',
+        'top_score'
     ];
 
     public function user()
@@ -22,16 +19,18 @@ extends Model
         );
     }
 
-    public function alternative()
+    public function topAlternative()
     {
         return $this->belongsTo(
-            Alternative::class
+            Alternative::class,
+            'top_alternative_id'
         );
     }
-    public function session()
+
+    public function results()
     {
-        return $this->belongsTo(
-            RecommendationSession::class,
+        return $this->hasMany(
+            RecommendationResult::class,
             'recommendation_session_id'
         );
     }

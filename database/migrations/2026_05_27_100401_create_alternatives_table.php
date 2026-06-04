@@ -12,12 +12,12 @@ return new class extends Migration
 
             $table->id();
 
-            $table->string('kode')->unique();
+            $table->string('kode')
+                ->unique();
 
             $table->string('nama_topik');
 
-            $table->string('bidang')
-                ->nullable();
+            $table->string('kompetensi_lulusan');
 
             $table->text('deskripsi')
                 ->nullable();

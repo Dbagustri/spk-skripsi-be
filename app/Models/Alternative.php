@@ -9,10 +9,9 @@ class Alternative extends Model
     protected $fillable = [
         'kode',
         'nama_topik',
-        'bidang',
+        'kompetensi_lulusan',
         'deskripsi'
     ];
-
     public function criteria()
     {
         return $this->hasMany(

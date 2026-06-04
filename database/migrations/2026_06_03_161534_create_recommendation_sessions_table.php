@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create(
-            'recommendation_results',
+            'recommendation_sessions',
             function (
                 Blueprint $table
             ) {
@@ -23,15 +23,16 @@ return new class extends Migration
                     ->cascadeOnDelete();
 
                 $table->foreignId(
-                    'alternative_id'
+                    'top_alternative_id'
                 )
-                    ->constrained()
-                    ->cascadeOnDelete();
-
-                $table->integer('rank');
+                    ->nullable()
+                    ->constrained(
+                        'alternatives'
+                    )
+                    ->nullOnDelete();
 
                 $table->decimal(
-                    'score',
+                    'top_score',
                     10,
                     5
                 );
@@ -44,7 +45,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists(
-            'recommendation_results'
+            'recommendation_sessions'
         );
     }
 };

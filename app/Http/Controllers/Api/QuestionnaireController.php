@@ -3,68 +3,120 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\QuestionnaireAnswer;
-use App\Services\WaspasService;
 use Illuminate\Http\Request;
+use App\Models\Alternative;
+use App\Models\Criteria;
+use App\Models\QuestionnaireAnswer;
+use Illuminate\Support\Facades\Auth;
 
 class QuestionnaireController extends Controller
 {
+    /**
+     * Get questionnaire data
+     */
+    public function index()
+    {
+        $alternatives = Alternative::select(
+            'id',
+            'kode',
+            'nama_topik',
+            'kompetensi_lulusan',
+            'deskripsi'
+        )->get();
+
+        $criteria = Criteria::where(
+            'source',
+            'user'
+        )->select(
+            'id',
+            'kode',
+            'nama',
+            'tipe'
+        )->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'alternatives' => $alternatives,
+                'criteria' => $criteria
+            ]
+        ]);
+    }
+
+    /**
+     * Submit questionnaire
+     */
     public function submit(
-        Request $request,
-        WaspasService $waspasService
+        Request $request
     ) {
-        $validated =
-            $request->validate([
-                'answers' =>
-                'required|array',
 
-                'answers.*.question_id' =>
-                'required|exists:questions,id',
+        $request->validate([
 
-                'answers.*.answer_value' =>
-                'required|integer|min:1|max:5'
-            ]);
+            'answers' =>
+            'required|array',
 
-        $user =
-            $request->user();
+            'answers.*.alternative_id' =>
+            'required|exists:alternatives,id',
 
-        // hapus jawaban lama
-        QuestionnaireAnswer::where(
-            'user_id',
-            $user->id
-        )->delete();
+            'answers.*.criteria_id' =>
+            'required|exists:criterias,id',
 
-        // simpan jawaban baru
+            'answers.*.nilai' =>
+            'required|integer|min:1|max:5',
+        ]);
+
+        // wajib isi semua
+        $expectedAnswers =
+            Alternative::count()
+            *
+            Criteria::where(
+                'source',
+                'user'
+            )->count();
+
+        if (
+            count(
+                $request->answers
+            )
+            < $expectedAnswers
+        ) {
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                'Semua alternatif harus diisi lengkap'
+            ], 422);
+        }
+
         foreach (
-            $validated['answers']
+            $request->answers
             as $answer
         ) {
 
-            QuestionnaireAnswer::create([
-                'user_id' =>
-                $user->id,
+            QuestionnaireAnswer::updateOrCreate(
 
-                'question_id' =>
-                $answer['question_id'],
+                [
+                    'user_id' =>
+                    Auth::id(),
 
-                'answer_value' =>
-                $answer['answer_value'],
-            ]);
-        }
+                    'alternative_id' =>
+                    $answer['alternative_id'],
 
-        // hitung rekomendasi
-        $result =
-            $waspasService
-            ->calculate(
-                $user->id
+                    'criteria_id' =>
+                    $answer['criteria_id']
+                ],
+
+                [
+                    'nilai' =>
+                    $answer['nilai']
+                ]
             );
+        }
 
         return response()->json([
             'success' => true,
             'message' =>
-            'Kuesioner berhasil disimpan',
-            'recommendation' =>
-            $result
+            'Questionnaire submitted successfully'
         ]);
     }
 }

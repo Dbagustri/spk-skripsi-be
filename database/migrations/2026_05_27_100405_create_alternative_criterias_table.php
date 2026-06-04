@@ -14,13 +14,13 @@ return new class extends Migration
 
             $table->foreignId('alternative_id')
                 ->constrained()
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
 
             $table->foreignId('criteria_id')
                 ->constrained()
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
 
-            $table->integer('nilai');
+            $table->tinyInteger('nilai');
 
             $table->timestamps();
 

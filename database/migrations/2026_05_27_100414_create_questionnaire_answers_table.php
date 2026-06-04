@@ -14,15 +14,25 @@ return new class extends Migration
 
             $table->foreignId('user_id')
                 ->constrained()
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
 
-            $table->foreignId('question_id')
+            $table->foreignId('alternative_id')
                 ->constrained()
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
 
-            $table->integer('answer_value');
+            $table->foreignId('criteria_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->tinyInteger('nilai');
 
             $table->timestamps();
+
+            $table->unique([
+                'user_id',
+                'alternative_id',
+                'criteria_id'
+            ]);
         });
     }
 

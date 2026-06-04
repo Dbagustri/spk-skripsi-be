@@ -6,25 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class Criteria extends Model
 {
+    protected $table = 'criterias';
+
     protected $fillable = [
         'kode',
         'nama',
+        'source',
         'bobot',
         'tipe',
         'deskripsi'
     ];
 
-    public function alternativeCriteria()
+    public function alternativeScores()
     {
         return $this->hasMany(
             AlternativeCriteria::class
         );
     }
 
-    public function questions()
+    public function questionnaireAnswers()
     {
         return $this->hasMany(
-            Question::class
+            QuestionnaireAnswer::class
         );
     }
 }

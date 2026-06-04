@@ -12,19 +12,26 @@ return new class extends Migration
 
             $table->id();
 
-            $table->string('kode')->unique();
+            $table->string('kode')
+                ->unique();
+
             $table->string('nama');
 
-            $table->decimal(
-                'bobot',
-                5,
-                2
+            $table->enum(
+                'source',
+                ['user', 'admin']
             );
 
             $table->enum(
                 'tipe',
                 ['benefit', 'cost']
             )->default('benefit');
+
+            $table->decimal(
+                'bobot',
+                5,
+                2
+            )->default(0);
 
             $table->text('deskripsi')
                 ->nullable();

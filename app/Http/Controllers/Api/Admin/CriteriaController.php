@@ -79,9 +79,11 @@ class CriteriaController extends Controller
         ]);
     }
 
-    public function destroy(
-        Criteria $criteria
-    ) {
+    public function destroy($id)
+    {
+        $criteria =
+            Criteria::findOrFail($id);
+
         $criteria->delete();
 
         return response()->json([

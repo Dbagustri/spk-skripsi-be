@@ -2,277 +2,341 @@
 
 namespace App\Services;
 
-use App\Models\Criteria;
 use App\Models\Alternative;
+use App\Models\Criteria;
 use App\Models\QuestionnaireAnswer;
+use App\Models\AlternativeCriteria;
 use App\Models\RecommendationResult;
 
 class WaspasService
 {
-    public function calculate($userId)
-    {
-        // ==========================
-        // 1. Ambil data
-        // ==========================
+    public function calculate(
+        int $userId
+    ) {
 
-        $criteria = Criteria::all();
+        $criterias =
+            Criteria::all();
 
-        $alternatives = Alternative::with(
-            'criteria.criterion'
-        )->get();
+        $alternatives =
+            Alternative::all();
 
-        $answers = QuestionnaireAnswer::with(
-            'question'
-        )
-            ->where('user_id', $userId)
-            ->get();
+        // =====================
+        // DECISION MATRIX
+        // =====================
 
-        // ==========================
-        // 2. Bentuk bobot user
-        // ==========================
-
-        $userWeights = [];
-
-        foreach ($criteria as $criterion) {
-
-            $filtered = $answers->filter(
-                function ($answer)
-                use ($criterion) {
-
-                    return
-                        $answer->question
-                        ->criteria_id
-                        ==
-                        $criterion->id;
-                }
-            );
-
-            // rata-rata jawaban per kriteria
-            $avg =
-                $filtered->avg(
-                    'answer_value'
-                ) ?? 1;
-
-            $userWeights[$criterion->id] = $avg;
-        }
-
-        // normalisasi bobot user
-        $totalWeight =
-            array_sum(
-                $userWeights
-            );
-
-        foreach (
-            $userWeights
-            as $key => $weight
-        ) {
-            $userWeights[$key] =
-                $weight
-                /
-                $totalWeight;
-        }
-
-        // ==========================
-        // 3. Cari nilai max/min
-        // ==========================
-
-        $criteriaStats = [];
-
-        foreach ($criteria as $criterion) {
-
-            $values = [];
-
-            foreach (
-                $alternatives
-                as $alternative
-            ) {
-
-                foreach (
-                    $alternative->criteria
-                    as $item
-                ) {
-
-                    if (
-                        $item->criteria_id
-                        ==
-                        $criterion->id
-                    ) {
-
-                        $values[] =
-                            $item->nilai;
-                    }
-                }
-            }
-
-            $criteriaStats[$criterion->id] = [
-                'max' =>
-                max($values),
-
-                'min' =>
-                min($values),
-
-                'type' =>
-                $criterion->tipe
-            ];
-        }
-
-        // ==========================
-        // 4. Hitung WASPAS
-        // ==========================
-
-        $results = [];
+        $matrix = [];
 
         foreach (
             $alternatives
             as $alternative
         ) {
 
-            $q1 = 0;
-            $q2 = 1;
-
             foreach (
-                $alternative->criteria
-                as $item
+                $criterias
+                as $criteria
             ) {
 
-                $criteriaId =
-                    $item->criteria_id;
-
-                $weight =
-                    $userWeights[$criteriaId];
-
-                $value =
-                    $item->nilai;
-
-                $type =
-                    $criteriaStats[$criteriaId]['type'];
-
-                // ==================
-                // Normalisasi
-                // ==================
-
+                // USER
                 if (
-                    $type
-                    ===
-                    'benefit'
+                    $criteria->source
+                    === 'user'
                 ) {
 
-                    $normalized =
-                        $value
-                        /
-                        $criteriaStats[$criteriaId]['max'];
-                } else {
-
-                    $normalized =
-                        $criteriaStats[$criteriaId]['min']
-                        /
-                        $value;
+                    $value =
+                        QuestionnaireAnswer::where(
+                            'user_id',
+                            $userId
+                        )
+                        ->where(
+                            'alternative_id',
+                            $alternative->id
+                        )
+                        ->where(
+                            'criteria_id',
+                            $criteria->id
+                        )
+                        ->value('nilai') ?? 1;
                 }
 
-                // ==================
-                // WSM
-                // ==================
+                // ADMIN
+                else {
 
-                $q1 +=
-                    $normalized
-                    * $weight;
+                    $value =
+                        AlternativeCriteria::where(
+                            'alternative_id',
+                            $alternative->id
+                        )
+                        ->where(
+                            'criteria_id',
+                            $criteria->id
+                        )
+                        ->value('nilai') ?? 1;
+                }
 
-                // ==================
-                // WPM
-                // ==================
+                $matrix[$alternative->kode][$criteria->kode] = $value;
+            }
+        }
 
-                $q2 *= pow(
-                    $normalized,
-                    $weight
-                );
+        // =====================
+        // NORMALIZATION
+        // =====================
+
+        $normalized = [];
+
+        foreach (
+            $criterias
+            as $criteria
+        ) {
+
+            $column = [];
+
+            foreach (
+                $alternatives
+                as $alternative
+            ) {
+
+                $column[] =
+                    $matrix[$alternative->kode][$criteria->kode];
             }
 
-            // ==================
-            // Final Qi
-            // ==================
+            $max =
+                max($column);
 
-            $finalScore =
-                (0.5 * $q1)
-                +
-                (0.5 * $q2);
+            $min =
+                min($column);
 
-            $results[] = [
+            foreach (
+                $alternatives
+                as $alternative
+            ) {
 
+                $value =
+                    $matrix[$alternative->kode][$criteria->kode];
+
+                if (
+                    $criteria->tipe
+                    === 'benefit'
+                ) {
+
+                    $normalized[$alternative->kode][$criteria->kode] =
+                        round(
+                            $value
+                                / $max,
+                            4
+                        );
+                } else {
+
+                    $normalized[$alternative->kode][$criteria->kode] =
+                        round(
+                            $min
+                                / $value,
+                            4
+                        );
+                }
+            }
+        }
+
+        // =====================
+        // WSM + WPM
+        // =====================
+
+        $wsmResults = [];
+        $wpmResults = [];
+        $waspasResults = [];
+
+        foreach (
+            $alternatives
+            as $alternative
+        ) {
+
+            $wsm = 0;
+            $wpm = 1;
+
+            foreach (
+                $criterias
+                as $criteria
+            ) {
+
+                $r =
+                    $normalized[$alternative->kode][$criteria->kode];
+
+                $w =
+                    $criteria->bobot;
+
+                // WSM
+                $wsm +=
+                    $w * $r;
+
+                // WPM
+                $wpm *=
+                    pow(
+                        $r,
+                        $w
+                    );
+            }
+
+            $wsm =
+                round(
+                    $wsm,
+                    5
+                );
+
+            $wpm =
+                round(
+                    $wpm,
+                    5
+                );
+
+            $score =
+                round(
+                    (
+                        0.5
+                        * $wsm
+                    )
+                        +
+                        (
+                            0.5
+                            * $wpm
+                        ),
+                    5
+                );
+
+            $wsmResults[] = [
+                'alternative' =>
+                $alternative->kode,
+
+                'value' =>
+                $wsm
+            ];
+
+            $wpmResults[] = [
+                'alternative' =>
+                $alternative->kode,
+
+                'value' =>
+                $wpm
+            ];
+
+            $waspasResults[] = [
                 'alternative_id' =>
                 $alternative->id,
+
+                'kode' =>
+                $alternative->kode,
 
                 'nama_topik' =>
                 $alternative
                     ->nama_topik,
 
-                'q1_score' =>
-                round(
-                    $q1,
-                    4
-                ),
-
-                'q2_score' =>
-                round(
-                    $q2,
-                    4
-                ),
-
-                'final_score' =>
-                round(
-                    $finalScore,
-                    4
-                ),
+                'score' =>
+                $score,
             ];
         }
 
-        // ==========================
-        // 5. Ranking
-        // ==========================
-
+        // SORT
         usort(
-            $results,
-            fn($a, $b) =>
-            $b['final_score']
+            $waspasResults,
+            fn(
+                $a,
+                $b
+            ) =>
+            $b['score']
                 <=>
-                $a['final_score']
+                $a['score']
         );
 
-        // ==========================
-        // 6. Simpan history
-        // ==========================
-
-        RecommendationResult::where(
-            'user_id',
-            $userId
-        )->delete();
-
         foreach (
-            $results
-            as $index => $result
+            $waspasResults
+            as $index => &$item
         ) {
 
-            RecommendationResult::create([
-
-                'user_id' =>
-                $userId,
-
-                'alternative_id' =>
-                $result['alternative_id'],
-
-                'q1_score' =>
-                $result['q1_score'],
-
-                'q2_score' =>
-                $result['q2_score'],
-
-                'final_score' =>
-                $result['final_score'],
-
-                'ranking' =>
-                $index + 1,
-            ]);
+            $item['rank']
+                =
+                $index + 1;
         }
 
-        return $results;
+        return [
+
+            'decision_matrix' =>
+            $matrix,
+
+            'normalized_matrix' =>
+            $normalized,
+
+            'wsm' =>
+            $wsmResults,
+
+            'wpm' =>
+            $wpmResults,
+
+            'ranking' =>
+            $waspasResults,
+
+            'recommendation' =>
+            $waspasResults[0]
+        ];
+    }
+    public function calculateFromSession(
+        int $sessionId
+    ) {
+
+        $ranking =
+            RecommendationResult::with(
+                'alternative'
+            )
+            ->where(
+                'recommendation_session_id',
+                $sessionId
+            )
+            ->orderBy('rank')
+            ->get();
+
+        return [
+
+            'recommendation' => [
+
+                'nama_topik' =>
+                $ranking
+                    ->first()
+                    ?->alternative
+                    ?->nama_topik,
+
+                'kompetensi_lulusan' =>
+                $ranking
+                    ->first()
+                    ?->alternative
+                    ?->kompetensi_lulusan,
+
+                'score' =>
+                $ranking
+                    ->first()
+                    ?->score,
+            ],
+
+            'ranking' =>
+            $ranking->map(
+                function ($item) {
+
+                    return [
+
+                        'rank' =>
+                        $item->rank,
+
+                        'kode' =>
+                        $item
+                            ->alternative
+                            ->kode,
+
+                        'nama_topik' =>
+                        $item
+                            ->alternative
+                            ->nama_topik,
+
+                        'score' =>
+                        $item->score,
+                    ];
+                }
+            )
+        ];
     }
 }
