@@ -1,12 +1,12 @@
 # SPK Skripsi Backend (Laravel API)
 
-Backend API untuk Sistem Pendukung Keputusan (SPK) Penentuan Topik Skripsi Mahasiswa Jurusan TIK Prodi TI PNJ menggunakan metode WASPAS.
+Backend REST API untuk **Sistem Pendukung Keputusan (SPK) Penentuan Topik Skripsi Mahasiswa Jurusan TIK Prodi TI PNJ** menggunakan metode **WASPAS (Weighted Aggregated Sum Product Assessment)**.
 
 ## Tech Stack
 
-- Laravel 13
+- Laravel 12+
 - MySQL
-- Sanctum Authentication
+- Laravel Sanctum Authentication
 - Spatie Permission (Role & Permission)
 - REST API
 - WASPAS Method
@@ -15,26 +15,33 @@ Backend API untuk Sistem Pendukung Keputusan (SPK) Penentuan Topik Skripsi Mahas
 
 ## Features
 
-### Mahasiswa
-- Register
+### Mahasiswa / User
+
+- Register + Data Mahasiswa
 - Login
 - Logout
 - Profile Mahasiswa
-- Isi Kuesioner
+- Isi Kuesioner Penilaian Topik Skripsi
 - Hasil Rekomendasi Topik Skripsi
-- Riwayat Rekomendasi
+- Detail Perhitungan WASPAS
+- Riwayat Hasil Rekomendasi
 
 ### Admin
+
+- Dashboard Monitoring
 - CRUD Kriteria
-- CRUD Topik Skripsi (Alternatif)
-- CRUD Pertanyaan
+- CRUD Alternatif (Topik Skripsi)
+- CRUD Nilai Alternatif Kriteria
+- CRUD Mahasiswa
+- Monitoring Riwayat Pengguna
+- Monitoring Hasil Rekomendasi
 - Role-based Access Control
 
 ---
 
 ## Installation
 
-Clone project:
+Clone repository:
 
 ```bash
 git clone https://github.com/Dbagustri/spk-skripsi-be.git
@@ -47,21 +54,21 @@ Install dependency:
 composer install
 ```
 
-Copy env:
+Copy environment:
 
 ```bash
 cp .env.example .env
 ```
 
-Generate key:
+Generate application key:
 
 ```bash
 php artisan key:generate
 ```
 
-Setup database di `.env`
+Setup database pada file `.env`
 
-Run migration:
+Run migration + seeder:
 
 ```bash
 php artisan migrate --seed
@@ -75,16 +82,25 @@ php artisan serve
 
 ---
 
-## Default Admin
+## Default Account
+
+### Admin
 
 ```text
-Email: admin2@spk.com
-Password: admin12345
+Email    : admin@gmail.com
+Password : admin12345
+```
+
+### Mahasiswa
+
+```text
+Email    : user@gmail.com
+Password : user12345
 ```
 
 ---
 
-# API Testing
+# API Documentation
 
 Base URL:
 
@@ -94,54 +110,122 @@ http://127.0.0.1:8000/api
 
 ---
 
-## Authentication
+# Authentication
 
-### Register
+## Register
+
+Mendaftarkan akun mahasiswa sekaligus membuat data `student_profile`.
+
+### Endpoint
 
 ```http
 POST /auth/register
 ```
 
-Body:
+### Request Body
 
 ```json
 {
-    "name": "Diandra",
+    "name": "Diandra Bagustri",
     "email": "diandra@mail.com",
     "password": "password123",
-    "password_confirmation": "password123"
+    "password_confirmation": "password123",
+    "nim": "2207411001",
+    "semester": 8,
+    "ipk": 3.75,
+    "minat": "Software Engineer"
+}
+```
+
+### Response
+
+```json
+{
+    "success": true,
+    "message": "Register berhasil",
+    "data": {
+        "token": "TOKEN",
+        "user": {
+            "id": 1,
+            "name": "Diandra Bagustri",
+            "email": "diandra@mail.com",
+            "role": ["user"]
+        }
+    }
 }
 ```
 
 ---
 
-### Login
+## Login
+
+### Endpoint
 
 ```http
 POST /auth/login
 ```
 
-Body:
+### Request Body
 
 ```json
 {
-    "email": "diandra@mail.com",
-    "password": "password123"
+    "email": "user@gmail.com",
+    "password": "user12345"
 }
 ```
 
-Response:
+---
+
+## Profile
+
+### Endpoint
+
+```http
+GET /auth/profile
+```
+
+### Header
+
+```text
+Authorization:
+Bearer TOKEN
+```
+
+### Response
 
 ```json
 {
     "success": true,
     "data": {
-        "token": "TOKEN"
+        "id": 2,
+        "name": "Mahasiswa",
+        "email": "user@gmail.com",
+        "role": ["user"],
+        "student_profile": {
+            "nim": "2207411001",
+            "semester": 8,
+            "ipk": 3.75,
+            "minat": "Software Engineer"
+        }
     }
 }
 ```
 
-Gunakan token:
+---
+
+## Logout
+
+### Endpoint
+
+```http
+POST /auth/logout
+```
+
+---
+
+# User API
+
+Semua endpoint berikut membutuhkan token:
 
 ```text
 Authorization:
@@ -150,61 +234,70 @@ Bearer TOKEN
 
 ---
 
-## Student Profile
+## Get Me
 
-### Create Profile
+### Endpoint
 
 ```http
-POST /student-profile
-```
-
-Body:
-
-```json
-{
-    "nim": "2207411001",
-    "semester": 8,
-    "ipk": 3.75,
-    "minat_karir": "Software Engineer"
-}
+GET /me
 ```
 
 ---
 
-## Questions
+## Get Criteria
 
-### Get Questions
+### Endpoint
 
 ```http
-GET /questions
+GET /criteria
 ```
 
 ---
 
-## Questionnaire
+## Get Alternatives
 
-### Submit Answers
+### Endpoint
+
+```http
+GET /alternatives
+```
+
+---
+
+# Questionnaire
+
+## Get Questionnaire
+
+### Endpoint
+
+```http
+GET /questionnaire
+```
+
+---
+
+## Submit Questionnaire
+
+### Endpoint
 
 ```http
 POST /questionnaire
 ```
 
-Body:
+### Request Body
 
 ```json
 {
     "answers": [
         {
-            "question_id": 1,
-            "answer_value": 5
+            "alternative_id": 1,
+            "criteria_id": 1,
+            "nilai": 4
         },
         {
-            "question_id": 2,
-            "answer_value": 4
-        },
-        {
-            "question_id": 3,
-            "answer_value": 5
+            "alternative_id": 1,
+            "criteria_id": 2,
+            "nilai": 5
         }
     ]
 }
@@ -212,17 +305,45 @@ Body:
 
 ---
 
-## Recommendation
+# Recommendation (WASPAS)
 
-### Calculate Recommendation
+## Calculate Recommendation
+
+Menghitung rekomendasi topik skripsi menggunakan metode WASPAS.
+
+### Endpoint
 
 ```http
-GET /recommendation
+POST /recommendation
 ```
 
 ---
 
-### Recommendation History
+## Latest Recommendation
+
+### Endpoint
+
+```http
+GET /recommendation/latest
+```
+
+---
+
+## Detail Recommendation
+
+Menampilkan detail perhitungan metode WASPAS.
+
+### Endpoint
+
+```http
+GET /recommendation/detail
+```
+
+---
+
+## Recommendation History
+
+### Endpoint
 
 ```http
 GET /recommendation/history
@@ -230,52 +351,170 @@ GET /recommendation/history
 
 ---
 
-## Admin API
+## Recommendation History Detail
 
-Admin only:
-
-### Criteria
+### Endpoint
 
 ```http
-GET /admin/criteria
-POST /admin/criteria
-PUT /admin/criteria/{id}
-DELETE /admin/criteria/{id}
-```
-
-### Alternatives
-
-```http
-GET /admin/alternatives
-POST /admin/alternatives
-PUT /admin/alternatives/{id}
-DELETE /admin/alternatives/{id}
-```
-
-### Questions
-
-```http
-GET /admin/questions
-POST /admin/questions
-PUT /admin/questions/{id}
-DELETE /admin/questions/{id}
+GET /recommendation/history/{id}
 ```
 
 ---
 
-## WASPAS Formula
+# Admin API
 
-Qi dihitung menggunakan metode WASPAS:
+Admin only:
 
-- Weighted Sum Model (WSM)
-- Weighted Product Model (WPM)
+```text
+Middleware:
+auth:sanctum
+role:admin
+```
 
-Final score:
+---
 
-Qi = 0.5(Q1) + 0.5(Q2)
+## Dashboard Data
+
+### Get Users
+
+```http
+GET /admin/users
+```
+
+### Get Results
+
+```http
+GET /admin/results
+```
+
+### Get History
+
+```http
+GET /admin/history
+```
+
+---
+
+## Criteria CRUD
+
+```http
+GET    /admin/criteria
+POST   /admin/criteria
+PUT    /admin/criteria/{id}
+DELETE /admin/criteria/{id}
+```
+
+---
+
+## Alternatives CRUD
+
+```http
+GET    /admin/alternatives
+POST   /admin/alternatives
+PUT    /admin/alternatives/{id}
+DELETE /admin/alternatives/{id}
+```
+
+---
+
+## Alternative Criteria CRUD
+
+Digunakan untuk mengelola nilai sistem terhadap alternatif berdasarkan kriteria admin.
+
+### Endpoint
+
+```http
+GET    /admin/alternative-criteria
+POST   /admin/alternative-criteria
+PUT    /admin/alternative-criteria/{id}
+DELETE /admin/alternative-criteria/{id}
+```
+
+---
+
+## Student Management
+
+### Get Students
+
+```http
+GET /admin/students
+```
+
+### Create Student
+
+```http
+POST /admin/students
+```
+
+### Update Student
+
+```http
+PUT /admin/students/{id}
+```
+
+### Delete Student
+
+```http
+DELETE /admin/students/{id}
+```
+
+---
+
+# WASPAS Formula
+
+Sistem menggunakan metode **WASPAS (Weighted Aggregated Sum Product Assessment)**.
+
+Perhitungan akhir:
+
+Qᵢ = 0.5(Q1) + 0.5(Q2)
+
+Keterangan:
+
+- **Q1** = Weighted Sum Model (WSM)
+- **Q2** = Weighted Product Model (WPM)
+
+### Benefit Criteria
+
+Normalisasi:
+
+```text
+xij / max(xij)
+```
+
+### Cost Criteria
+
+Normalisasi:
+
+```text
+min(xij) / xij
+```
+
+---
+
+## Project Structure
+
+```text
+app/
+├── Http/Controllers/Api
+│   ├── Admin
+│   ├── AuthController.php
+│   ├── QuestionnaireController.php
+│   ├── RecommendationController.php
+│   └── StudentProfileController.php
+│
+├── Models
+│   ├── Alternative.php
+│   ├── Criteria.php
+│   ├── StudentProfile.php
+│   ├── QuestionnaireAnswer.php
+│   ├── RecommendationResult.php
+│   └── AlternativeCriteria.php
+```
 
 ---
 
 ## Author
 
-Diandra Bagustri
+**Diandra Bagustri**
+
+Sistem Pendukung Keputusan Topik Skripsi Mahasiswa menggunakan metode WASPAS.

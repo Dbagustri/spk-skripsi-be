@@ -48,12 +48,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     public function studentProfile()
     {
         return $this->hasOne(
             StudentProfile::class
         );
     }
+
 
     public function questionnaireAnswers()
     {

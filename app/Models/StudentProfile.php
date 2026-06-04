@@ -11,7 +11,7 @@ class StudentProfile extends Model
         'nim',
         'semester',
         'ipk',
-        'minat'
+        'minat',
     ];
 
     public function user()

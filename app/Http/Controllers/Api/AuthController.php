@@ -9,40 +9,110 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
+    public function register(
+        Request $request
+    ) {
 
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        $validatedData =
+            $request->validate([
+                'name' =>
+                'required|string|max:255',
+
+                'email' =>
+                'required|email|unique:users,email',
+
+                'password' =>
+                'required|min:8|confirmed',
+
+                'nim' =>
+                'required|string|max:20|unique:student_profiles,nim',
+
+                'semester' =>
+                'required|integer|min:1|max:14',
+
+                'ipk' =>
+                'required|numeric|min:0|max:4',
+
+                'minat' =>
+                'required|string|max:255',
+            ]);
+
+        // ==================
+        // CREATE USER
+        // ==================
 
         $user = User::create([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-            'password' => Hash::make($validatedData['password']),
+            'name' =>
+            $validatedData['name'],
+
+            'email' =>
+            $validatedData['email'],
+
+            'password' =>
+            Hash::make(
+                $validatedData['password']
+            ),
         ]);
 
-        $user->assignRole('mahasiswa');
+        $user->assignRole(
+            'user'
+        );
+
+        // ==================
+        // CREATE STUDENT PROFILE
+        // ==================
+
+        $user->studentProfile()
+            ->create([
+                'nim' =>
+                $validatedData['nim'],
+
+                'semester' =>
+                $validatedData['semester'],
+
+                'ipk' =>
+                $validatedData['ipk'],
+
+                'minat' =>
+                $validatedData['minat'],
+            ]);
+
+        // ==================
+        // TOKEN
+        // ==================
 
         $token = $user
-            ->createToken('auth_token')
+            ->createToken(
+                'auth_token'
+            )
             ->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Register berhasil',
-            'data' => [
-                'token' => $token,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->getRoleNames()
+        return response()
+            ->json([
+                'success' => true,
+
+                'message' =>
+                'Register berhasil',
+
+                'data' => [
+                    'token' =>
+                    $token,
+
+                    'user' => [
+                        'id' =>
+                        $user->id,
+
+                        'name' =>
+                        $user->name,
+
+                        'email' =>
+                        $user->email,
+
+                        'role' =>
+                        $user->getRoleNames(),
+                    ]
                 ]
-            ]
-        ], 201);
+            ], 201);
     }
     public function login(Request $request)
     {
@@ -83,17 +153,55 @@ class AuthController extends Controller
             'data' => $request->user()
         ]);
     }
-    public function profile(Request $request)
-    {
-        $user = $request->user();
+    public function profile(
+        Request $request
+    ) {
+
+        $user = User::with(
+            'studentProfile'
+        )->find(
+            $request->user()->id
+        );
 
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->getRoleNames()
+                'id' =>
+                $user->id,
+
+                'name' =>
+                $user->name,
+
+                'email' =>
+                $user->email,
+
+                'created_at' =>
+                $user->created_at,
+
+                'role' =>
+                $user->getRoleNames(),
+
+                'student_profile' => [
+                    'nim' =>
+                    $user
+                        ->studentProfile
+                        ?->nim,
+
+                    'semester' =>
+                    $user
+                        ->studentProfile
+                        ?->semester,
+
+                    'ipk' =>
+                    $user
+                        ->studentProfile
+                        ?->ipk,
+
+                    'minat' =>
+                    $user
+                        ->studentProfile
+                        ?->minat,
+                ]
             ]
         ]);
     }

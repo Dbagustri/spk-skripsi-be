@@ -5,11 +5,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\RecommendationController;
-use App\Http\Controllers\Api\Admin\AlternativeController;
-use App\Http\Controllers\Api\Admin\CriteriaController;
-use App\Http\Controllers\Api\Admin\AlternativeCriteriaController;
+use App\Http\Controllers\Api\StudentProfileController;
+
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\ResultController;
+use App\Http\Controllers\Api\Admin\HistoryController;
+use App\Http\Controllers\Api\Admin\CriteriaController;
+use App\Http\Controllers\Api\Admin\AlternativeController;
+use App\Http\Controllers\Api\Admin\AlternativeCriteriaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,7 +50,7 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| USER API (Mahasiswa + Admin)
+| USER API
 |--------------------------------------------------------------------------
 */
 
@@ -68,7 +71,7 @@ Route::middleware(
 
     /*
     |--------------------------------------------------------------------------
-    | Read Only
+    | Read Only Data
     |--------------------------------------------------------------------------
     */
 
@@ -106,7 +109,7 @@ Route::middleware(
 
     /*
     |--------------------------------------------------------------------------
-    | Recommendation / WASPAS
+    | Recommendation
     |--------------------------------------------------------------------------
     */
 
@@ -127,18 +130,18 @@ Route::middleware(
     );
 
     Route::get(
-        '/recommendation/history',
-        [
-            RecommendationController::class,
-            'history'
-        ]
-    );
-
-    Route::get(
         '/recommendation/detail',
         [
             RecommendationController::class,
             'detail'
+        ]
+    );
+
+    Route::get(
+        '/recommendation/history',
+        [
+            RecommendationController::class,
+            'history'
         ]
     );
 
@@ -164,9 +167,16 @@ Route::prefix('admin')
     ])
     ->group(function () {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Test
+        |--------------------------------------------------------------------------
+        */
+
         Route::get(
             '/test',
             function () {
+
                 return response()->json([
                     'message' =>
                     'Admin only'
@@ -176,30 +186,39 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Criteria CRUD
+        | Dashboard Data
         |--------------------------------------------------------------------------
         */
-        /*
-|--------------------------------------------------------------------------
-| Users
-|--------------------------------------------------------------------------
-*/
 
         Route::get(
             '/users',
-            [UserController::class, 'index']
+            [
+                UserController::class,
+                'index'
+            ]
         );
 
-        /*
-|--------------------------------------------------------------------------
-| Results
-|--------------------------------------------------------------------------
-*/
+        Route::get(
+            '/history',
+            [
+                HistoryController::class,
+                'index'
+            ]
+        );
 
         Route::get(
             '/results',
-            [ResultController::class, 'index']
+            [
+                ResultController::class,
+                'index'
+            ]
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Criteria CRUD
+        |--------------------------------------------------------------------------
+        */
 
         Route::apiResource(
             'criteria',
@@ -208,7 +227,7 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Alternatives CRUD
+        | Alternative CRUD
         |--------------------------------------------------------------------------
         */
 
@@ -219,23 +238,50 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
-        | Alternative Criteria Scoring
+        | Alternative Criteria CRUD
+        |--------------------------------------------------------------------------
+        */
+
+        Route::apiResource(
+            'alternative-criteria',
+            AlternativeCriteriaController::class
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Management
         |--------------------------------------------------------------------------
         */
 
         Route::get(
-            '/alternative-criteria',
+            '/students',
             [
-                AlternativeCriteriaController::class,
-                'index'
+                StudentProfileController::class,
+                'indexAdmin'
+            ]
+        );
+
+        Route::post(
+            '/students',
+            [
+                StudentProfileController::class,
+                'storeAdmin'
             ]
         );
 
         Route::put(
-            '/alternative-criteria/{alternative}',
+            '/students/{id}',
             [
-                AlternativeCriteriaController::class,
-                'update'
+                StudentProfileController::class,
+                'updateAdmin'
+            ]
+        );
+
+        Route::delete(
+            '/students/{id}',
+            [
+                StudentProfileController::class,
+                'destroyAdmin'
             ]
         );
     });

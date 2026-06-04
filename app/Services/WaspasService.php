@@ -7,18 +7,42 @@ use App\Models\Criteria;
 use App\Models\QuestionnaireAnswer;
 use App\Models\AlternativeCriteria;
 use App\Models\RecommendationResult;
+use Exception;
 
 class WaspasService
 {
-    public function calculate(
-        int $userId
-    ) {
+    public function calculate(int $userId)
+    {
+        // =====================
+        // LOAD DATA
+        // =====================
 
-        $criterias =
-            Criteria::all();
+        $criterias = Criteria::orderBy('id')->get();
 
-        $alternatives =
-            Alternative::all();
+        $alternatives = Alternative::orderBy('id')->get();
+
+        // Load semua jawaban user sekali query
+        $userAnswers = QuestionnaireAnswer::where(
+            'user_id',
+            $userId
+        )->get();
+
+        // Load semua nilai admin sekali query
+        $adminValues =
+            AlternativeCriteria::all();
+
+        // Mapping biar cepat akses
+        $userMap = [];
+
+        foreach ($userAnswers as $answer) {
+            $userMap[$answer->alternative_id][$answer->criteria_id] = $answer->nilai;
+        }
+
+        $adminMap = [];
+
+        foreach ($adminValues as $value) {
+            $adminMap[$value->alternative_id][$value->criteria_id] = $value->nilai;
+        }
 
         // =====================
         // DECISION MATRIX
@@ -26,54 +50,37 @@ class WaspasService
 
         $matrix = [];
 
-        foreach (
-            $alternatives
-            as $alternative
-        ) {
+        foreach ($alternatives as $alternative) {
 
-            foreach (
-                $criterias
-                as $criteria
-            ) {
+            foreach ($criterias as $criteria) {
 
-                // USER
+                // USER SOURCE
                 if (
-                    $criteria->source
-                    === 'user'
+                    $criteria->source ===
+                    'user'
                 ) {
 
                     $value =
-                        QuestionnaireAnswer::where(
-                            'user_id',
-                            $userId
-                        )
-                        ->where(
-                            'alternative_id',
-                            $alternative->id
-                        )
-                        ->where(
-                            'criteria_id',
-                            $criteria->id
-                        )
-                        ->value('nilai') ?? 1;
+                        $userMap[$alternative->id][$criteria->id] ?? null;
                 }
 
-                // ADMIN
+                // ADMIN SOURCE
                 else {
 
                     $value =
-                        AlternativeCriteria::where(
-                            'alternative_id',
-                            $alternative->id
-                        )
-                        ->where(
-                            'criteria_id',
-                            $criteria->id
-                        )
-                        ->value('nilai') ?? 1;
+                        $adminMap[$alternative->id][$criteria->id] ?? null;
                 }
 
-                $matrix[$alternative->kode][$criteria->kode] = $value;
+                // Validasi data kosong
+                if (
+                    is_null($value)
+                ) {
+                    throw new Exception(
+                        "Nilai kriteria {$criteria->kode} untuk alternatif {$alternative->kode} tidak ditemukan."
+                    );
+                }
+
+                $matrix[$alternative->kode][$criteria->kode] = (float) $value;
             }
         }
 
@@ -83,85 +90,63 @@ class WaspasService
 
         $normalized = [];
 
-        foreach (
-            $criterias
-            as $criteria
-        ) {
+        foreach ($criterias as $criteria) {
 
             $column = [];
 
-            foreach (
-                $alternatives
-                as $alternative
-            ) {
+            foreach ($alternatives as $alternative) {
 
                 $column[] =
                     $matrix[$alternative->kode][$criteria->kode];
             }
 
-            $max =
-                max($column);
+            $max = max($column);
+            $min = min($column);
 
-            $min =
-                min($column);
-
-            foreach (
-                $alternatives
-                as $alternative
-            ) {
+            foreach ($alternatives as $alternative) {
 
                 $value =
                     $matrix[$alternative->kode][$criteria->kode];
 
+                // BENEFIT
                 if (
-                    $criteria->tipe
-                    === 'benefit'
+                    $criteria->tipe ===
+                    'benefit'
                 ) {
 
                     $normalized[$alternative->kode][$criteria->kode] =
-                        round(
-                            $value
-                                / $max,
-                            4
-                        );
-                } else {
+                        $value / $max;
+                }
+
+                // COST
+                else {
 
                     $normalized[$alternative->kode][$criteria->kode] =
-                        round(
-                            $min
-                                / $value,
-                            4
-                        );
+                        $min / $value;
                 }
             }
         }
 
         // =====================
-        // WSM + WPM
+        // WSM + WPM + WASPAS
         // =====================
 
         $wsmResults = [];
         $wpmResults = [];
         $waspasResults = [];
 
-        foreach (
-            $alternatives
-            as $alternative
-        ) {
+        foreach ($alternatives as $alternative) {
 
             $wsm = 0;
             $wpm = 1;
 
-            foreach (
-                $criterias
-                as $criteria
-            ) {
+            foreach ($criterias as $criteria) {
 
                 $r =
                     $normalized[$alternative->kode][$criteria->kode];
 
                 $w =
-                    $criteria->bobot;
+                    (float) $criteria->bobot;
 
                 // WSM
                 $wsm +=
@@ -175,30 +160,14 @@ class WaspasService
                     );
             }
 
-            $wsm =
-                round(
-                    $wsm,
-                    5
-                );
-
-            $wpm =
-                round(
-                    $wpm,
-                    5
-                );
-
+            // Final score WASPAS
             $score =
-                round(
-                    (
-                        0.5
-                        * $wsm
-                    )
-                        +
-                        (
-                            0.5
-                            * $wpm
-                        ),
-                    5
+                (
+                    0.5 * $wsm
+                )
+                +
+                (
+                    0.5 * $wpm
                 );
 
             $wsmResults[] = [
@@ -206,7 +175,10 @@ class WaspasService
                 $alternative->kode,
 
                 'value' =>
-                $wsm
+                round(
+                    $wsm,
+                    5
+                )
             ];
 
             $wpmResults[] = [
@@ -214,10 +186,14 @@ class WaspasService
                 $alternative->kode,
 
                 'value' =>
-                $wpm
+                round(
+                    $wpm,
+                    5
+                )
             ];
 
             $waspasResults[] = [
+
                 'alternative_id' =>
                 $alternative->id,
 
@@ -228,18 +204,25 @@ class WaspasService
                 $alternative
                     ->nama_topik,
 
+                'kompetensi_lulusan' =>
+                $alternative
+                    ->kompetensi_lulusan,
+
                 'score' =>
-                $score,
+                round(
+                    $score,
+                    5
+                ),
             ];
         }
 
-        // SORT
+        // =====================
+        // SORTING RANK
+        // =====================
+
         usort(
             $waspasResults,
-            fn(
-                $a,
-                $b
-            ) =>
+            fn($a, $b) =>
             $b['score']
                 <=>
                 $a['score']
@@ -250,10 +233,13 @@ class WaspasService
             as $index => &$item
         ) {
 
-            $item['rank']
-                =
+            $item['rank'] =
                 $index + 1;
         }
+
+        // =====================
+        // RETURN
+        // =====================
 
         return [
 
@@ -261,7 +247,18 @@ class WaspasService
             $matrix,
 
             'normalized_matrix' =>
-            $normalized,
+            array_map(
+                fn($row) =>
+                array_map(
+                    fn($value) =>
+                    round(
+                        $value,
+                        4
+                    ),
+                    $row
+                ),
+                $normalized
+            ),
 
             'wsm' =>
             $wsmResults,
@@ -273,9 +270,10 @@ class WaspasService
             $waspasResults,
 
             'recommendation' =>
-            $waspasResults[0]
+            $waspasResults[0] ?? null,
         ];
     }
+
     public function calculateFromSession(
         int $sessionId
     ) {
@@ -340,3 +338,4 @@ class WaspasService
         ];
     }
 }
+ 

@@ -4,20 +4,24 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+
 use App\Models\Alternative;
 use App\Models\AlternativeCriteria;
 use App\Models\Criteria;
 
-class AlternativeCriteriaController extends Controller
+class AlternativeCriteriaController
+extends Controller
 {
     /**
-     * Display admin scoring for all alternatives
+     * Display admin scoring
+     * for all alternatives
      */
     public function index()
     {
-        $alternatives = Alternative::with([
-            'criteriaScores.criteria'
-        ])->get();
+        $alternatives =
+            Alternative::with([
+                'criteria.criterion'
+            ])->get();
 
         return response()->json([
             'success' => true,
@@ -26,36 +30,58 @@ class AlternativeCriteriaController extends Controller
     }
 
     /**
-     * Update admin scoring per alternative
+     * Show single alternative
+     */
+    public function show(
+        Alternative $alternative
+    ) {
+
+        $alternative->load([
+            'criteria.criterion'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $alternative
+        ]);
+    }
+
+    /**
+     * Update admin scoring
      */
     public function update(
         Request $request,
         Alternative $alternative
     ) {
 
-        $request->validate([
-            'scores' => 'required|array',
+        $validated =
+            $request->validate([
 
-            'scores.*.criteria_id' =>
-            'required|exists:criterias,id',
+                'scores' =>
+                'required|array|min:1',
 
-            'scores.*.nilai' =>
-            'required|integer|min:1|max:5',
-        ]);
+                'scores.*.criteria_id' =>
+                'required|exists:criterias,id',
+
+                'scores.*.nilai' =>
+                'required|integer|min:1|max:5',
+            ]);
 
         foreach (
-            $request->scores
+            $validated['scores']
             as $score
         ) {
 
-            // hanya admin criteria
-            $criteria = Criteria::find(
-                $score['criteria_id']
-            );
+            $criteria =
+                Criteria::find(
+                    $score['criteria_id']
+                );
 
+            // hanya admin criteria
             if (
                 $criteria &&
-                $criteria->source === 'admin'
+                $criteria->source
+                === 'admin'
             ) {
 
                 AlternativeCriteria::updateOrCreate(
@@ -74,10 +100,18 @@ class AlternativeCriteriaController extends Controller
             }
         }
 
+        $alternative->load([
+            'criteria.criterion'
+        ]);
+
         return response()->json([
             'success' => true,
+
             'message' =>
-            'Alternative criteria updated successfully'
+            'Alternative criteria updated successfully',
+
+            'data' =>
+            $alternative
         ]);
     }
 }
