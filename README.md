@@ -1,60 +1,281 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SPK Skripsi Backend (Laravel API)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend API untuk Sistem Pendukung Keputusan (SPK) Penentuan Topik Skripsi Mahasiswa Jurusan TIK Prodi TI PNJ menggunakan metode WASPAS.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 13
+- MySQL
+- Sanctum Authentication
+- Spatie Permission (Role & Permission)
+- REST API
+- WASPAS Method
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Features
 
-## Learning Laravel
+### Mahasiswa
+- Register
+- Login
+- Logout
+- Profile Mahasiswa
+- Isi Kuesioner
+- Hasil Rekomendasi Topik Skripsi
+- Riwayat Rekomendasi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Admin
+- CRUD Kriteria
+- CRUD Topik Skripsi (Alternatif)
+- CRUD Pertanyaan
+- Role-based Access Control
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Installation
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Clone project:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/Dbagustri/spk-skripsi-be.git
+cd spk-skripsi-be
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Install dependency:
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Copy env:
 
-## Code of Conduct
+```bash
+cp .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Generate key:
 
-## Security Vulnerabilities
+```bash
+php artisan key:generate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Setup database di `.env`
 
-## License
+Run migration:
 
-# The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan migrate --seed
+```
 
-# spk-skripsi-be
+Run server:
+
+```bash
+php artisan serve
+```
+
+---
+
+## Default Admin
+
+```text
+Email: admin2@spk.com
+Password: admin12345
+```
+
+---
+
+# API Testing
+
+Base URL:
+
+```text
+http://127.0.0.1:8000/api
+```
+
+---
+
+## Authentication
+
+### Register
+
+```http
+POST /auth/register
+```
+
+Body:
+
+```json
+{
+    "name": "Diandra",
+    "email": "diandra@mail.com",
+    "password": "password123",
+    "password_confirmation": "password123"
+}
+```
+
+---
+
+### Login
+
+```http
+POST /auth/login
+```
+
+Body:
+
+```json
+{
+    "email": "diandra@mail.com",
+    "password": "password123"
+}
+```
+
+Response:
+
+```json
+{
+    "success": true,
+    "data": {
+        "token": "TOKEN"
+    }
+}
+```
+
+Gunakan token:
+
+```text
+Authorization:
+Bearer TOKEN
+```
+
+---
+
+## Student Profile
+
+### Create Profile
+
+```http
+POST /student-profile
+```
+
+Body:
+
+```json
+{
+    "nim": "2207411001",
+    "semester": 8,
+    "ipk": 3.75,
+    "minat_karir": "Software Engineer"
+}
+```
+
+---
+
+## Questions
+
+### Get Questions
+
+```http
+GET /questions
+```
+
+---
+
+## Questionnaire
+
+### Submit Answers
+
+```http
+POST /questionnaire
+```
+
+Body:
+
+```json
+{
+    "answers": [
+        {
+            "question_id": 1,
+            "answer_value": 5
+        },
+        {
+            "question_id": 2,
+            "answer_value": 4
+        },
+        {
+            "question_id": 3,
+            "answer_value": 5
+        }
+    ]
+}
+```
+
+---
+
+## Recommendation
+
+### Calculate Recommendation
+
+```http
+GET /recommendation
+```
+
+---
+
+### Recommendation History
+
+```http
+GET /recommendation/history
+```
+
+---
+
+## Admin API
+
+Admin only:
+
+### Criteria
+
+```http
+GET /admin/criteria
+POST /admin/criteria
+PUT /admin/criteria/{id}
+DELETE /admin/criteria/{id}
+```
+
+### Alternatives
+
+```http
+GET /admin/alternatives
+POST /admin/alternatives
+PUT /admin/alternatives/{id}
+DELETE /admin/alternatives/{id}
+```
+
+### Questions
+
+```http
+GET /admin/questions
+POST /admin/questions
+PUT /admin/questions/{id}
+DELETE /admin/questions/{id}
+```
+
+---
+
+## WASPAS Formula
+
+Qi dihitung menggunakan metode WASPAS:
+
+- Weighted Sum Model (WSM)
+- Weighted Product Model (WPM)
+
+Final score:
+
+Qi = 0.5(Q1) + 0.5(Q2)
+
+---
+
+## Author
+
+Diandra Bagustri
