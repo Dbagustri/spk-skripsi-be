@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\StudentProfileController;
-
+use App\Http\Controllers\Api\Admin\WeightController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\ResultController;
 use App\Http\Controllers\Api\Admin\HistoryController;
@@ -182,6 +182,25 @@ Route::prefix('admin')
                     'Admin only'
                 ]);
             }
+        );
+        /*
+|--------------------------------------------------------------------------
+| Weights
+|--------------------------------------------------------------------------
+*/
+
+        Route::get(
+            '/weights',
+            [WeightController::class, 'index']
+        );
+
+        Route::put(
+            '/weights',
+            [WeightController::class, 'update']
+        );
+        Route::get(
+            '/criteria/total-weight',
+            [CriteriaController::class, 'totalWeight']
         );
 
         /*

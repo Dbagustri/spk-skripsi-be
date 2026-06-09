@@ -12,10 +12,6 @@ use App\Models\Criteria;
 class AlternativeCriteriaController
 extends Controller
 {
-    /**
-     * Display admin scoring
-     * for all alternatives
-     */
     public function index()
     {
         $alternatives =
@@ -29,9 +25,6 @@ extends Controller
         ]);
     }
 
-    /**
-     * Show single alternative
-     */
     public function show(
         Alternative $alternative
     ) {
@@ -51,38 +44,46 @@ extends Controller
      */
     public function update(
         Request $request,
-        Alternative $alternative
+        $id
     ) {
 
-        $validated =
-            $request->validate([
+        try {
 
-                'scores' =>
-                'required|array|min:1',
-
-                'scores.*.criteria_id' =>
-                'required|exists:criterias,id',
-
-                'scores.*.nilai' =>
-                'required|integer|min:1|max:5',
-            ]);
-
-        foreach (
-            $validated['scores']
-            as $score
-        ) {
-
-            $criteria =
-                Criteria::find(
-                    $score['criteria_id']
+            $alternative =
+                Alternative::findOrFail(
+                    $id
                 );
 
-            // hanya admin criteria
-            if (
-                $criteria &&
-                $criteria->source
-                === 'admin'
+            $validated =
+                $request->validate([
+
+                    'scores' =>
+                    'required|array|min:1',
+
+                    'scores.*.criteria_id' =>
+                    'required|exists:criterias,id',
+
+                    'scores.*.nilai' =>
+                    'required|integer|min:1|max:5',
+                ]);
+
+            foreach (
+                $validated['scores']
+                as $score
             ) {
+
+                $criteria =
+                    Criteria::find(
+                        $score['criteria_id']
+                    );
+
+                // hanya criteria admin
+                if (
+                    !$criteria ||
+                    $criteria->source !== 'admin'
+                ) {
+                    continue;
+                }
 
                 AlternativeCriteria::updateOrCreate(
                     [
@@ -98,20 +99,29 @@ extends Controller
                     ]
                 );
             }
+
+            $alternative->load([
+                'criteria.criterion'
+            ]);
+
+            return response()->json([
+                'success' => true,
+
+                'message' =>
+                'Alternative criteria updated successfully',
+
+                'data' =>
+                $alternative
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                $e->getMessage(),
+                'line' =>
+                $e->getLine()
+            ], 500);
         }
-
-        $alternative->load([
-            'criteria.criterion'
-        ]);
-
-        return response()->json([
-            'success' => true,
-
-            'message' =>
-            'Alternative criteria updated successfully',
-
-            'data' =>
-            $alternative
-        ]);
     }
 }

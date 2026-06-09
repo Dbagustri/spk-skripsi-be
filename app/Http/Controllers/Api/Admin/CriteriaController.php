@@ -8,28 +8,35 @@ use Illuminate\Http\Request;
 
 class CriteriaController extends Controller
 {
+    /**
+     * Get all criteria
+     */
     public function index()
     {
         return response()->json([
             'success' => true,
-            'data' => Criteria::all()
+            'data' => Criteria::orderBy('id')->get()
         ]);
     }
 
+    /**
+     * Store criteria
+     */
     public function store(
         Request $request
     ) {
+
         $validated =
             $request->validate([
 
                 'kode' =>
-                'required|unique:criterias',
+                'required|string|max:10|unique:criterias,kode',
 
                 'nama' =>
                 'required|string|max:255',
 
-                'bobot' =>
-                'required|numeric',
+                'source' =>
+                'required|in:user,admin',
 
                 'tipe' =>
                 'required|in:benefit,cost',
@@ -39,9 +46,10 @@ class CriteriaController extends Controller
             ]);
 
         $criteria =
-            Criteria::create(
-                $validated
-            );
+            Criteria::create([
+                ...$validated,
+                'bobot' => 0
+            ]);
 
         return response()->json([
             'success' => true,
@@ -49,12 +57,17 @@ class CriteriaController extends Controller
             'Kriteria berhasil dibuat',
             'data' =>
             $criteria
-        ]);
+        ], 201);
     }
 
-    public function show(
-        Criteria $criteria
-    ) {
+    /**
+     * Show criteria
+     */
+    public function show($id)
+    {
+        $criteria =
+            Criteria::findOrFail($id);
+
         return response()->json([
             'success' => true,
             'data' =>
@@ -62,34 +75,85 @@ class CriteriaController extends Controller
         ]);
     }
 
+    /**
+     * Update criteria
+     */
     public function update(
         Request $request,
-        Criteria $criteria
+        $id
     ) {
+
+        $criteria =
+            Criteria::findOrFail($id);
+
+        $validated =
+            $request->validate([
+
+                'kode' =>
+                'required|string|max:10|unique:criterias,kode,' .
+                    $criteria->id,
+
+                'nama' =>
+                'required|string|max:255',
+
+                'source' =>
+                'required|in:user,admin',
+
+                'tipe' =>
+                'required|in:benefit,cost',
+
+                'deskripsi' =>
+                'nullable|string'
+            ]);
+
         $criteria->update(
-            $request->all()
+            $validated
         );
 
         return response()->json([
             'success' => true,
             'message' =>
-            'Kriteria berhasil diupdate',
+            'Kriteria berhasil diperbarui',
             'data' =>
             $criteria
         ]);
     }
 
+    /**
+     * Delete criteria
+     */
     public function destroy($id)
     {
-        $criteria =
-            Criteria::findOrFail($id);
+        try {
 
-        $criteria->delete();
+            $criteria =
+                Criteria::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'message' =>
-            'Kriteria berhasil dihapus'
-        ]);
+            // hapus relasi alternative criteria
+            $criteria
+                ->alternativeScores()
+                ->delete();
+
+            // hapus relasi questionnaire answer
+            $criteria
+                ->questionnaireAnswers()
+                ->delete();
+
+            // hapus criteria
+            $criteria->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' =>
+                'Kriteria berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                $e->getMessage()
+            ], 500);
+        }
     }
 }
