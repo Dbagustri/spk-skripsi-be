@@ -8,26 +8,44 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('alternatives', function (Blueprint $table) {
+        Schema::create(
+            'alternatives',
+            function (
+                Blueprint $table
+            ) {
 
-            $table->id();
+                $table->id();
 
-            $table->string('kode')
-                ->unique();
+                $table->string(
+                    'kode'
+                )->unique();
 
-            $table->string('nama_topik');
+                $table->string(
+                    'nama_topik'
+                );
 
-            $table->string('kompetensi_lulusan');
+                $table->string(
+                    'kompetensi_lulusan'
+                );
 
-            $table->text('deskripsi')
-                ->nullable();
+                // TAMBAHAN
+                $table->string(
+                    'mata_kuliah_relevan'
+                )->nullable();
 
-            $table->timestamps();
-        });
+                $table->text(
+                    'deskripsi'
+                )->nullable();
+
+                $table->timestamps();
+            },
+        );
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('alternatives');
+        Schema::dropIfExists(
+            'alternatives',
+        );
     }
 };

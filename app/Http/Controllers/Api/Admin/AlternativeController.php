@@ -12,23 +12,28 @@ class AlternativeController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Alternative::all()
+            'data' =>
+            Alternative::all()
         ]);
     }
 
     public function store(
         Request $request
     ) {
+
         $validated =
             $request->validate([
 
                 'kode' =>
-                'required|unique:alternatives',
+                'required|string|unique:alternatives,kode',
 
                 'nama_topik' =>
                 'required|string|max:255',
 
-                'bidang' =>
+                'kompetensi_lulusan' =>
+                'required|string|max:255',
+
+                'mata_kuliah_relevan' =>
                 'nullable|string|max:255',
 
                 'deskripsi' =>
@@ -44,6 +49,7 @@ class AlternativeController extends Controller
             'success' => true,
             'message' =>
             'Topik berhasil dibuat',
+
             'data' =>
             $alternative
         ]);
@@ -54,7 +60,8 @@ class AlternativeController extends Controller
     ) {
         return response()->json([
             'success' => true,
-            'data' => $alternative
+            'data' =>
+            $alternative
         ]);
     }
 
@@ -62,14 +69,36 @@ class AlternativeController extends Controller
         Request $request,
         Alternative $alternative
     ) {
+
+        $validated =
+            $request->validate([
+
+                'kode' =>
+                'required|string|unique:alternatives,kode,' .
+                    $alternative->id,
+
+                'nama_topik' =>
+                'required|string|max:255',
+
+                'kompetensi_lulusan' =>
+                'required|string|max:255',
+
+                'mata_kuliah_relevan' =>
+                'nullable|string|max:255',
+
+                'deskripsi' =>
+                'nullable|string'
+            ]);
+
         $alternative->update(
-            $request->all()
+            $validated
         );
 
         return response()->json([
             'success' => true,
             'message' =>
             'Topik berhasil diupdate',
+
             'data' =>
             $alternative
         ]);
@@ -78,6 +107,7 @@ class AlternativeController extends Controller
     public function destroy(
         Alternative $alternative
     ) {
+
         $alternative->delete();
 
         return response()->json([

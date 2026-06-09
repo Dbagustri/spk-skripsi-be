@@ -21,6 +21,7 @@ class QuestionnaireController extends Controller
             'kode',
             'nama_topik',
             'kompetensi_lulusan',
+            'mata_kuliah_relevan',
             'deskripsi'
         )->get();
 

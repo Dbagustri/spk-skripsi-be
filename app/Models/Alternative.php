@@ -10,8 +10,10 @@ class Alternative extends Model
         'kode',
         'nama_topik',
         'kompetensi_lulusan',
+        'mata_kuliah_relevan',
         'deskripsi'
     ];
+
     public function criteria()
     {
         return $this->hasMany(
